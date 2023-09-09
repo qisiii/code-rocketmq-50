@@ -64,6 +64,7 @@ public class ClusterTestRequestProcessor extends ClientRequestProcessor {
             topicRouteData.setOrderTopicConf(orderTopicConf);
         } else {
             try {
+                //TODO qisi 2023/2/26 不同之处在于这里，但意义是啥呢
                 topicRouteData = adminExt.examineTopicRouteInfo(requestHeader.getTopic());
             } catch (Exception e) {
                 log.info("get route info by topic from product environment failed. envName={},", productEnvName);

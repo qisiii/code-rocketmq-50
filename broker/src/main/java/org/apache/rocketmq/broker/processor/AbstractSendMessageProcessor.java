@@ -71,6 +71,7 @@ import static org.apache.rocketmq.broker.metrics.BrokerMetricsConstant.LABEL_TOP
 
 public abstract class AbstractSendMessageProcessor implements NettyRequestProcessor {
     protected static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
+    //dead-letter queue死信队列
     protected static final Logger DLQ_LOG = LoggerFactory.getLogger(LoggerName.DLQ_LOGGER_NAME);
 
     protected List<ConsumeMessageHook> consumeMessageHookList;

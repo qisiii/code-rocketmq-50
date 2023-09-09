@@ -60,7 +60,7 @@ public class ClientRequestProcessor implements NettyRequestProcessor {
         final RemotingCommand response = RemotingCommand.createResponseCommand(null);
         final GetRouteInfoRequestHeader requestHeader =
             (GetRouteInfoRequestHeader) request.decodeCommandCustomHeader(GetRouteInfoRequestHeader.class);
-
+        //会有可能存在这样一个时间值，如果启动后还没有这么久，就报错，换句话说，必须在超过这么久之后才工作，应该是预留出来初始化topic用的
         boolean namesrvReady = needCheckNamesrvReady.get() && System.currentTimeMillis() - startupTimeMillis >= TimeUnit.SECONDS.toMillis(namesrvController.getNamesrvConfig().getWaitSecondsForService());
 
         if (namesrvController.getNamesrvConfig().isNeedWaitForService() && !namesrvReady) {
@@ -73,6 +73,7 @@ public class ClientRequestProcessor implements NettyRequestProcessor {
         TopicRouteData topicRouteData = this.namesrvController.getRouteInfoManager().pickupTopicRouteData(requestHeader.getTopic());
 
         if (topicRouteData != null) {
+            //这里能查到，则是认为肯定将topic信息处理好了
             //topic route info register success ,so disable namesrvReady check
             if (needCheckNamesrvReady.get()) {
                 needCheckNamesrvReady.set(false);

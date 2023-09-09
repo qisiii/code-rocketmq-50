@@ -70,7 +70,7 @@ public class RouteInfoManager {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
     private final static long DEFAULT_BROKER_CHANNEL_EXPIRED_TIME = 1000 * 60 * 2;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
-    private final Map<String/* topic */, Map<String, QueueData>> topicQueueTable;
+    private final Map<String/* topic */, Map<String/*brokerName*/, QueueData>> topicQueueTable;
     private final Map<String/* brokerName */, BrokerData> brokerAddrTable;
     private final Map<String/* clusterName */, Set<String/* brokerName */>> clusterAddrTable;
     private final Map<BrokerAddrInfo/* brokerAddr */, BrokerLiveInfo> brokerLiveTable;
@@ -124,6 +124,9 @@ public class RouteInfoManager {
         }
         try {
             this.lock.writeLock().lockInterruptibly();
+            //Q&A 2023/4/16
+            // Q:我理解只有broker才会去注册，那多个broker的相同topic既然不能重复，那么是在什么时候更新的呢？注册topic和注册broker哪个先呢？
+            // A: 同一个topic可能是多个brokerName，但是同一个brokerName里只会存一次；不存在更新！注册broker要先
             if (this.topicQueueTable.containsKey(topic)) {
                 log.info("Topic route already exist.{}, {}", topic, this.topicQueueTable.get(topic));
             } else {
@@ -259,11 +262,14 @@ public class RouteInfoManager {
             if (brokerId < prevMinBrokerId) {
                 isMinBrokerIdChanged = true;
             }
+            //截止到这里，上面是拿到集群里的单个broker节点，取里面存储的所有其他节点的地址，判断新注册的是否为master，是否需要切换
 
             //Switch slave to master: first remove <1, IP:PORT> in namesrv, then add <0, IP:PORT>
             //The same IP:PORT must only have one record in brokerAddrTable
+            //如果是从节点切换为主节点，那么需要删除原来的从节点的地址信息
+            //移除的是同地址但是brokerId不一样的信息
             brokerAddrsMap.entrySet().removeIf(item -> null != brokerAddr && brokerAddr.equals(item.getValue()) && brokerId != item.getKey());
-
+            //这一part目前还不知道是干什么的
             //If Local brokerId stateVersion bigger than the registering one,
             String oldBrokerAddr = brokerAddrsMap.get(brokerId);
             if (null != oldBrokerAddr && !oldBrokerAddr.equals(brokerAddr)) {
@@ -288,11 +294,12 @@ public class RouteInfoManager {
                     topicConfigWrapper.getTopicConfigTable(), brokerId, brokerAddr);
                 return null;
             }
-
+            //这行接269行，在移除完之后插入新的
             String oldAddr = brokerAddrsMap.put(brokerId, brokerAddr);
             registerFirst = registerFirst || (StringUtils.isEmpty(oldAddr));
 
             boolean isMaster = MixAll.MASTER_ID == brokerId;
+            //primesalve应该是侯位的master
             boolean isPrimeSlave = !isOldVersionBroker && !isMaster
                 && brokerId == Collections.min(brokerAddrsMap.keySet());
 
@@ -308,6 +315,7 @@ public class RouteInfoManager {
                             final TopicConfig topicConfig = entry.getValue();
                             if (isPrimeSlave) {
                                 // Wipe write perm for prime slave
+                                //什么时候赋予的权限？
                                 topicConfig.setPerm(topicConfig.getPerm() & (~PermName.PERM_WRITE));
                             }
                             this.createAndUpdateQueueData(brokerName, topicConfig);
@@ -363,6 +371,7 @@ public class RouteInfoManager {
             }
 
             if (isMinBrokerIdChanged && namesrvConfig.isNotifyMinBrokerIdChanged()) {
+                //这里通知的是该broker所有节点
                 notifyMinBrokerIdChanged(brokerAddrsMap, null,
                     this.brokerLiveTable.get(brokerAddrInfo).getHaServerAddr());
             }
@@ -525,6 +534,11 @@ public class RouteInfoManager {
         unRegisterBroker(Sets.newHashSet(unRegisterBrokerRequest));
     }
 
+    /**
+     * 去除注册信息，主要包括brokerLiveTable、filterServerTable、brokerAddrTable（存在remove和reduce两种情况)、clusterAddrTable（存在remove和reduce两种情况)
+     *
+     * @param unRegisterRequests
+     */
     public void unRegisterBroker(Set<UnRegisterBrokerRequestHeader> unRegisterRequests) {
         try {
             Set<String> removedBroker = new HashSet<>();
@@ -597,6 +611,9 @@ public class RouteInfoManager {
             cleanTopicByUnRegisterRequests(removedBroker, reducedBroker);
 
             if (!needNotifyBrokerMap.isEmpty() && namesrvConfig.isNotifyMinBrokerIdChanged()) {
+                //Q&A 2023/4/16
+                // Q:这里的minId是不是永远都应该是0才对，即主节点挂掉？
+                // A:
                 notifyMinBrokerIdChanged(needNotifyBrokerMap);
             }
         } catch (Exception e) {
@@ -606,6 +623,12 @@ public class RouteInfoManager {
         }
     }
 
+    /**
+     * 移除指定topic的broker信息
+     * 如果master失联，没有master存在的话，去掉写权限
+     * @param removedBroker
+     * @param reducedBroker
+     */
     private void cleanTopicByUnRegisterRequests(Set<String> removedBroker, Set<String> reducedBroker) {
         Iterator<Entry<String, Map<String, QueueData>>> itMap = this.topicQueueTable.entrySet().iterator();
         while (itMap.hasNext()) {
@@ -631,6 +654,7 @@ public class RouteInfoManager {
 
                 if (queueData != null) {
                     if (this.brokerAddrTable.get(brokerName).isEnableActingMaster()) {
+                        //去掉写的权限
                         // Master has been unregistered, wipe the write perm
                         if (isNoMasterExists(brokerName)) {
                             queueData.setPerm(queueData.getPerm() & (~PermName.PERM_WRITE));
@@ -744,6 +768,7 @@ public class RouteInfoManager {
                 for (final QueueData queueData : topicRouteData.getQueueDatas()) {
                     if (queueData.getBrokerName().equals(brokerData.getBrokerName())) {
                         if (!PermName.isWriteable(queueData.getPerm())) {
+                            //移除原来的从节点，将从节点切换为主节点，其他的地方不用处理吗？
                             final Long minBrokerId = Collections.min(brokerAddrs.keySet());
                             final String actingMasterAddr = brokerAddrs.remove(minBrokerId);
                             brokerAddrs.put(MixAll.MASTER_ID, actingMasterAddr);
@@ -760,6 +785,10 @@ public class RouteInfoManager {
         return null;
     }
 
+    /**
+     * 启动的时候开启定时检测，检测这个超过指定时间就关闭
+     * 可以理解为这个地方是namesrv自检
+     */
     public void scanNotActiveBroker() {
         try {
             log.info("start scanNotActiveBroker");
@@ -777,6 +806,11 @@ public class RouteInfoManager {
         }
     }
 
+    /**
+     * 这个是启动的时候调用的，而且传入的是brokerAddrInfo不是channel
+     *
+     * @param brokerAddrInfo
+     */
     public void onChannelDestroy(BrokerAddrInfo brokerAddrInfo) {
         UnRegisterBrokerRequestHeader unRegisterRequest = new UnRegisterBrokerRequestHeader();
         boolean needUnRegister = false;
@@ -800,6 +834,11 @@ public class RouteInfoManager {
         }
     }
 
+    /**
+     * 如果channel关闭，需要将channel添加到unRegisterService去处理,最终调用的还是本类的unRegisterBroker
+     * 这个地方则是channel主动通知
+     * @param channel
+     */
     public void onChannelDestroy(Channel channel) {
         UnRegisterBrokerRequestHeader unRegisterRequest = new UnRegisterBrokerRequestHeader();
         BrokerAddrInfo brokerAddrFound = null;

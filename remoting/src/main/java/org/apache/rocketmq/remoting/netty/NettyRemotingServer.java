@@ -114,9 +114,11 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
         super(nettyServerConfig.getServerOnewaySemaphoreValue(), nettyServerConfig.getServerAsyncSemaphoreValue());
         this.serverBootstrap = new ServerBootstrap();
         this.nettyServerConfig = nettyServerConfig;
+        //注册到server上的一个handle，用于拦截处理时效的channel
         this.channelEventListener = channelEventListener;
-
+        /**公用线程或者是回调处理线程，当注册requestCode没传的时候，就知道*/
         this.publicExecutor = buildPublicExecutor(nettyServerConfig);
+        /**printRemotingCodeDistribution，打印入站出站的流水*/
         this.scheduledExecutorService = buildScheduleExecutor();
 
         this.eventLoopGroupBoss = buildBossEventLoopGroup();
@@ -435,6 +437,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
         handshakeHandler = new HandshakeHandler(TlsSystemConfig.tlsMode);
         encoder = new NettyEncoder();
         connectionManageHandler = new NettyConnectManageHandler();
+        //核心的handler
         serverHandler = new NettyServerHandler();
         distributionHandler = new RemotingCodeDistributionHandler();
     }

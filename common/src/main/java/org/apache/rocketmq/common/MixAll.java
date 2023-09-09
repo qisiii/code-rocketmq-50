@@ -350,6 +350,7 @@ public class MixAll {
             String mn = method.getName();
             if (mn.startsWith("set")) {
                 try {
+                    //es:setBindAddress,tmp="indAddress",first="b"
                     String tmp = mn.substring(4);
                     String first = mn.substring(3, 4);
 

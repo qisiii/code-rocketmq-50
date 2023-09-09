@@ -90,6 +90,7 @@ public class ControllerManager {
                 return new FutureTaskExt<>(runnable, value);
             }
         };
+        //感觉是用来替换下线broker操作的
         this.heartbeatManager = new DefaultBrokerHeartbeatManager(this.controllerConfig);
         if (StringUtils.isEmpty(this.controllerConfig.getControllerDLegerPeers())) {
             throw new IllegalArgumentException("Attribute value controllerDLegerPeers of ControllerConfig is null or empty");

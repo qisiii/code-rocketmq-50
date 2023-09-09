@@ -221,6 +221,9 @@ public class BrokerController {
     protected MessageStore messageStore;
     protected RemotingServer remotingServer;
     protected CountDownLatch remotingServerStartLatch;
+    //Q&A 2023/4/27
+    // Q: 端口号比普通的小2，作用呢？
+    // A:
     protected RemotingServer fastRemotingServer;
     protected TopicConfigManager topicConfigManager;
     protected SubscriptionGroupManager subscriptionGroupManager;
@@ -297,7 +300,13 @@ public class BrokerController {
         this.nettyServerConfig = nettyServerConfig;
         this.nettyClientConfig = nettyClientConfig;
         this.messageStoreConfig = messageStoreConfig;
+        //Q&A 2023/4/17
+        // Q:这个是干什么用的?
+        // A:
         this.setStoreHost(new InetSocketAddress(this.getBrokerConfig().getBrokerIP1(), getListenPort()));
+        //Q&A 2023/4/17
+        // Q:LMQ 轻消息队列 https://mp.weixin.qq.com/s/3HujE2tZtSr4q-u8LEJ8_w
+        // A:
         this.brokerStatsManager = messageStoreConfig.isEnableLmq() ? new LmqBrokerStatsManager(this.brokerConfig.getBrokerClusterName(), this.brokerConfig.isEnableDetailStat()) : new BrokerStatsManager(this.brokerConfig.getBrokerClusterName(), this.brokerConfig.isEnableDetailStat());
         this.consumerOffsetManager = messageStoreConfig.isEnableLmq() ? new LmqConsumerOffsetManager(this) : new ConsumerOffsetManager(this);
         this.broadcastOffsetManager = new BroadcastOffsetManager(this);
@@ -382,6 +391,9 @@ public class BrokerController {
             public boolean online(String instanceId, String group, String topic) {
                 String topicFullName = NamespaceUtil.wrapNamespace(instanceId, topic);
                 if (getTopicConfigManager().getTopicConfigTable().containsKey(topicFullName)) {
+                    //Q&A 2023/4/17
+                    // Q:这个和ConsumerStateGetter有啥关系
+                    // A:
                     return getConsumerManager().findSubscriptionData(NamespaceUtil.wrapNamespace(instanceId, group), topicFullName) != null;
                 } else {
                     return getConsumerManager().findSubscriptionData(group, topic) != null;
@@ -553,7 +565,9 @@ public class BrokerController {
             new ThreadFactoryImpl("BrokerControllerSyncBrokerScheduledThread", getBrokerIdentity()));
         this.brokerHeartbeatExecutorService = new ScheduledThreadPoolExecutor(1,
             new ThreadFactoryImpl("rokerControllerHeartbeatScheduledThread", getBrokerIdentity()));
-
+        //Q&A 2023/4/27
+        // Q: 上面一堆的初始化，唯一例外的是这个
+        // A:
         this.topicQueueMappingCleanService = new TopicQueueMappingCleanService(this);
     }
 
@@ -731,12 +745,19 @@ public class BrokerController {
     }
 
     public boolean initialize() throws CloneNotSupportedException {
-
+        //处理这个路径下，这一堆的json
+        //this.brokerController.getMessageStoreConfig().getStorePathRootDir()
+        //topics.json
         boolean result = this.topicConfigManager.load();
+        //topicQueueMapping.json
         result = result && this.topicQueueMappingManager.load();
+        //consumerOffset.json
         result = result && this.consumerOffsetManager.load();
+        //subscriptionGroup.json
         result = result && this.subscriptionGroupManager.load();
+        //consumerFilter.json
         result = result && this.consumerFilterManager.load();
+        //consumerOrderInfo.json
         result = result && this.consumerOrderInfoManager.load();
 
         if (result) {
@@ -790,21 +811,23 @@ public class BrokerController {
         this.brokerMetricsManager = new BrokerMetricsManager(this);
 
         if (result) {
-
+            //初始化了两个服务端，监听的端口号差2
             initializeRemotingServer();
-
+            //字面意思，注册了一堆线程池，唯一例外是多了个TopicQueueMappingCleanService
             initializeResources();
-
+            //注册了一大堆处理器，放置在不同的线程池处理（ps:这得需要多少线程啊）
             registerProcessor();
 
             initializeScheduledTasks();
 
             initialTransaction();
-
+            //访问控制，注册许多hook，在doBeforeRequest执行校验
             initialAcl();
 
             initialRpcHooks();
-
+            //Q&A 2023/5/4
+            // Q: 第一遍没有看，后面得看
+            // A:
             if (TlsSystemConfig.tlsMode != TlsMode.DISABLED) {
                 // Register a listener to reload SslContext
                 try {
@@ -970,9 +993,13 @@ public class BrokerController {
     }
 
     public void registerProcessor() {
+        /**
+         * sendMessageProcessor
+         */
         /*
          * SendMessageProcessor
          */
+        //这两个只是先把引用放进去了，还没有加hook
         sendMessageProcessor.registerSendMessageHook(sendMessageHookList);
         sendMessageProcessor.registerConsumeMessageHook(consumeMessageHookList);
 
@@ -1041,7 +1068,7 @@ public class BrokerController {
         this.fastRemotingServer.registerProcessor(RequestCode.VIEW_MESSAGE_BY_ID, queryProcessor, this.queryMessageExecutor);
 
         /**
-         * ClientManageProcessor
+         * ClientManageProcessor 重要的
          */
         this.remotingServer.registerProcessor(RequestCode.HEART_BEAT, clientManageProcessor, this.heartbeatExecutor);
         this.remotingServer.registerProcessor(RequestCode.UNREGISTER_CLIENT, clientManageProcessor, this.clientManageExecutor);
@@ -1052,7 +1079,7 @@ public class BrokerController {
         this.fastRemotingServer.registerProcessor(RequestCode.CHECK_CLIENT_CONFIG, clientManageProcessor, this.clientManageExecutor);
 
         /**
-         * ConsumerManageProcessor
+         * ConsumerManageProcessor 重要的
          */
         ConsumerManageProcessor consumerManageProcessor = new ConsumerManageProcessor(this);
         this.remotingServer.registerProcessor(RequestCode.GET_CONSUMER_LIST_BY_GROUP, consumerManageProcessor, this.consumerManageExecutor);
@@ -1078,7 +1105,7 @@ public class BrokerController {
         this.fastRemotingServer.registerProcessor(RequestCode.END_TRANSACTION, endTransactionProcessor, this.endTransactionExecutor);
 
         /*
-         * Default
+         * Default 重要
          */
         AdminBrokerProcessor adminProcessor = new AdminBrokerProcessor(this);
         this.remotingServer.registerDefaultProcessor(adminProcessor, this.adminBrokerExecutor);
@@ -2039,7 +2066,7 @@ public class BrokerController {
         }
         return null;
     }
-
+    /**获取broker的信息*/
     public BrokerIdentity getBrokerIdentity() {
         if (messageStoreConfig.isEnableDLegerCommitLog()) {
             return new BrokerIdentity(

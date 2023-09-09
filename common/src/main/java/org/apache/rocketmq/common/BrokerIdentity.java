@@ -53,7 +53,9 @@ public class BrokerIdentity {
     private volatile long brokerId = MixAll.MASTER_ID;
 
     private boolean isBrokerContainer = false;
-
+//Q&A 2023/4/27
+// Q: broker里的isInBrokerContainer到底什么用
+// A:
     // Do not set it manually, it depends on the startup mode
     // Broker start by BrokerStartup is false, start or add by BrokerContainer is true
     private boolean isInBrokerContainer = false;

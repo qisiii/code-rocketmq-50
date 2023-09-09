@@ -163,6 +163,7 @@ public class BrokerStatsManager {
     }
 
     public void init() {
+        /**反正是要打印一堆的参数*/
         momentStatsItemSetFallSize = new MomentStatsItemSet(GROUP_GET_FALL_SIZE,
             scheduledExecutorService, log);
 

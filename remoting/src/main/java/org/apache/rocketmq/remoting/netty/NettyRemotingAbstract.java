@@ -244,6 +244,7 @@ public abstract class NettyRemotingAbstract {
      * @param cmd request command.
      */
     public void processRequestCommand(final ChannelHandlerContext ctx, final RemotingCommand cmd) {
+        //namesrv如果非集群，那么就只注册了一个default和一个临时的GET_ROUTEINFO_BY_TOPIC
         final Pair<NettyRequestProcessor, ExecutorService> matched = this.processorTable.get(cmd.getCode());
         final Pair<NettyRequestProcessor, ExecutorService> pair = null == matched ? this.defaultRequestProcessorPair : matched;
         final int opaque = cmd.getOpaque();

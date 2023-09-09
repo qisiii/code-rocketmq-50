@@ -95,6 +95,9 @@ public class ProducerManager {
     }
 
     public void scanNotActiveChannel() {
+        //Q&A 2023/4/17
+        // Q:groupChannelTable的数据来源
+        // A:
         Iterator<Map.Entry<String, ConcurrentHashMap<Channel, ClientChannelInfo>>> iterator = this.groupChannelTable.entrySet().iterator();
 
         while (iterator.hasNext()) {

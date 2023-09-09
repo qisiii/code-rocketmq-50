@@ -337,7 +337,9 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
         DataVersion dataVersion = DataVersion.decode(request.getBody(), DataVersion.class);
         String clusterName = requestHeader.getClusterName();
         String brokerAddr = requestHeader.getBrokerAddr();
-
+        //Q&A 2023/5/24
+        // Q: 在这里查询之后，时间怎样都会更新，那么返回的change为true有什么用呢？
+        // A:
         Boolean changed = this.namesrvController.getRouteInfoManager().isBrokerTopicConfigChanged(clusterName, brokerAddr, dataVersion);
         this.namesrvController.getRouteInfoManager().updateBrokerInfoUpdateTimestamp(clusterName, brokerAddr);
 
@@ -356,7 +358,7 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
             RemotingCommand request) throws RemotingCommandException {
         final RemotingCommand response = RemotingCommand.createResponseCommand(null);
         final UnRegisterBrokerRequestHeader requestHeader = (UnRegisterBrokerRequestHeader) request.decodeCommandCustomHeader(UnRegisterBrokerRequestHeader.class);
-
+        //最终是BatchUnregistrationService
         if (!this.namesrvController.getRouteInfoManager().submitUnRegisterBrokerRequest(requestHeader)) {
             log.warn("Couldn't submit the unregister broker request to handler, broker info: {}", requestHeader);
             response.setCode(ResponseCode.SYSTEM_ERROR);
@@ -374,7 +376,7 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
         final BrokerHeartbeatRequestHeader requestHeader =
             (BrokerHeartbeatRequestHeader) request.decodeCommandCustomHeader(BrokerHeartbeatRequestHeader.class);
 
-
+        //保持心跳的本质就是更新lastUpdateTimestamp
         this.namesrvController.getRouteInfoManager().updateBrokerInfoUpdateTimestamp(requestHeader.getClusterName(), requestHeader.getBrokerAddr());
 
         response.setCode(ResponseCode.SUCCESS);

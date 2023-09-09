@@ -60,6 +60,12 @@ public class ZoneRouteRPCHook implements RPCHook {
         response.setBody(filterByZoneName(topicRouteData, zoneName).encode());
     }
 
+    /**
+     * TODO qisi 2023/2/26 过滤指定区的内容，但是不懂为什么break nearby route rule.
+     * @param topicRouteData
+     * @param zoneName
+     * @return
+     */
     private TopicRouteData filterByZoneName(TopicRouteData topicRouteData, String zoneName) {
         List<BrokerData> brokerDataReserved = new ArrayList<>();
         Map<String, BrokerData> brokerDataRemoved = new HashMap<>();

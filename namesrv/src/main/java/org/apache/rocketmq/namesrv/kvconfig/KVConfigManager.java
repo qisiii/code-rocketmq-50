@@ -28,11 +28,14 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.namesrv.NamesrvController;
 import org.apache.rocketmq.remoting.protocol.body.KVTable;
 
+/**
+ * 可以通过admin或者初始文件指定和修改配置
+ */
 public class KVConfigManager {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
 
     private final NamesrvController namesrvController;
-
+    //TODO qisi 2023/2/26 使用了读写锁,复习
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final HashMap<String/* Namespace */, HashMap<String/* Key */, String/* Value */>> configTable =
         new HashMap<>();
@@ -87,6 +90,9 @@ public class KVConfigManager {
         this.persist();
     }
 
+    /**
+     * 将配置持久化，如果源文件存在内容，则生成bak文件
+     */
     public void persist() {
         try {
             this.lock.readLock().lockInterruptibly();

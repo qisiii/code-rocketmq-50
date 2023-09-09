@@ -225,7 +225,9 @@ public class MessageStoreConfig {
     private boolean transientStorePoolEnable = false;
     private int transientStorePoolSize = 5;
     private boolean fastFailIfNoBufferInStorePool = false;
-
+    //Q&A 2023/4/27
+    // Q: 这里的配置的作用？
+    // A:
     // DLedger message store config
     private boolean enableDLegerCommitLog = false;
     private String dLegerGroup;

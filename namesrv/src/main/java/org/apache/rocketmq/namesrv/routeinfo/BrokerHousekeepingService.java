@@ -20,6 +20,9 @@ import io.netty.channel.Channel;
 import org.apache.rocketmq.namesrv.NamesrvController;
 import org.apache.rocketmq.remoting.ChannelEventListener;
 
+/**
+ * 核心作用是处理失效的这些channel
+ */
 public class BrokerHousekeepingService implements ChannelEventListener {
 
     private final NamesrvController namesrvController;

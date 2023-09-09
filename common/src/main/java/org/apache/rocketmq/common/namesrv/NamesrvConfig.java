@@ -30,6 +30,7 @@ public class NamesrvConfig {
     private String configStorePath = System.getProperty("user.home") + File.separator + "namesrv" + File.separator + "namesrv.properties";
     private String productEnvName = "center";
     private boolean clusterTest = false;
+    //TODO 作用？
     private boolean orderMessageEnable = false;
     private boolean returnOrderTopicConfigToBroker = true;
 
@@ -79,7 +80,9 @@ public class NamesrvConfig {
     private boolean enableControllerInNamesrv = false;
 
     private volatile boolean needWaitForService = false;
-
+    /**
+     * TODO 作用？
+     */
     private int waitSecondsForService = 45;
 
     public boolean isOrderMessageEnable() {

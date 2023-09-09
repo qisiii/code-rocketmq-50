@@ -52,11 +52,21 @@ public class NamesrvStartup {
 
     public static void main(String[] args) {
         main0(args);
+        //Q&A 2023/4/12
+        // Q:这个是干什么的？
+        // A:感觉就多了一个心跳检测，一个选举机制？也没有看到可以替换本来的
         controllerManagerMain();
     }
 
+    /**
+     * 启动namesrvCtroller，核心是通过一堆config构造servernetty，然后启动controller
+     *
+     * @param args
+     * @return
+     */
     public static NamesrvController main0(String[] args) {
         try {
+            //初始化配置
             parseCommandlineAndConfigFile(args);
             NamesrvController controller = createAndStartNamesrvController();
             return controller;
@@ -82,14 +92,15 @@ public class NamesrvStartup {
 
     public static void parseCommandlineAndConfigFile(String[] args) throws Exception {
         System.setProperty(RemotingCommand.REMOTING_VERSION_KEY, Integer.toString(MQVersion.CURRENT_VERSION));
-
+        //初始化了help和namesrv命令
+        //感觉这里面的-n对于namesrv可能没啥用，因为没有地方处理
         Options options = ServerUtil.buildCommandlineOptions(new Options());
         CommandLine commandLine = ServerUtil.parseCmdLine("mqnamesrv", args, buildCommandlineOptions(options), new DefaultParser());
         if (null == commandLine) {
             System.exit(-1);
             return;
         }
-
+        //可能通过配置文件初始化，也可以没有
         namesrvConfig = new NamesrvConfig();
         nettyServerConfig = new NettyServerConfig();
         nettyClientConfig = new NettyClientConfig();
@@ -115,6 +126,9 @@ public class NamesrvStartup {
         }
 
         MixAll.properties2Object(ServerUtil.commandLine2Properties(commandLine), namesrvConfig);
+        //Q&A 2023/5/5
+        // Q: rocketmq5在哪里获取的logback配置，以及STDOUT输出到了哪？
+        // A:
         if (commandLine.hasOption('p')) {
             MixAll.printObjectProperties(logConsole, namesrvConfig);
             MixAll.printObjectProperties(logConsole, nettyServerConfig);
@@ -164,7 +178,6 @@ public class NamesrvStartup {
             controller.shutdown();
             System.exit(-3);
         }
-
         Runtime.getRuntime().addShutdownHook(new ShutdownHookThread(log, (Callable<Void>) () -> {
             controller.shutdown();
             return null;

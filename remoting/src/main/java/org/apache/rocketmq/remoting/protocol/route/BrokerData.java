@@ -37,11 +37,13 @@ public class BrokerData implements Comparable<BrokerData> {
      * The key is the brokerId, and the value is the address of the single broker instance.
      */
     private HashMap<Long, String> brokerAddrs;
+    /**在ZoneRouteRPCHook应用*/
     private String zoneName;
     private final Random random = new Random();
 
     /**
      * Enable acting master or not, used for old version HA adaption,
+     * Q&A 这个配置是干什么用的?
      */
     private boolean enableActingMaster = false;
 

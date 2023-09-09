@@ -1,0 +1,7 @@
+namesrv模块
+核心类
+//从这个类往下跟，会发现其机制
+org.apache.rocketmq.remoting.netty.NettyRemotingServer.NettyServerHandler.channelRead0
+DefaultRequestProcessor
+RouteInfoManager
+整个namesrv模块，其实就是一个采用netty架构的简单的注册中心

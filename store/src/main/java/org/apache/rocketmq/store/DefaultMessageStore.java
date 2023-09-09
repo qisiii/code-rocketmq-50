@@ -191,6 +191,9 @@ public class DefaultMessageStore implements MessageStore {
         this.messageStoreConfig = messageStoreConfig;
         this.aliveReplicasNum = messageStoreConfig.getTotalReplicas();
         this.brokerStatsManager = brokerStatsManager;
+        //Q&A 2023/4/17
+        // Q:mmap映射，待研究
+        // A:
         this.allocateMappedFileService = new AllocateMappedFileService(this);
         if (messageStoreConfig.isEnableDLegerCommitLog()) {
             this.commitLog = new DLedgerCommitLog(this);
@@ -244,7 +247,7 @@ public class DefaultMessageStore implements MessageStore {
 
         parseDelayLevel();
     }
-
+//    private String messageDelayLevel = "1s 5s 10s 30s 1m 2m 3m 4m 5m 6m 7m 8m 9m 10m 20m 30m 1h 2h";
     public boolean parseDelayLevel() {
         HashMap<String, Long> timeUnitTable = new HashMap<>();
         timeUnitTable.put("s", 1000L);

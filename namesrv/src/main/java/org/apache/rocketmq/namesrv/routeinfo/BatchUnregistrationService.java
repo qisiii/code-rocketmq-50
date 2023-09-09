@@ -29,6 +29,7 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.header.namesrv.UnRegisterBrokerRequestHeader;
 
 /**
+ * broker批量下线？
  * BatchUnregistrationService provides a mechanism to unregister brokers in batch manner, which speeds up broker-offline
  * process.
  */
@@ -61,6 +62,9 @@ public class BatchUnregistrationService extends ServiceThread {
     public void run() {
         while (!this.isStopped()) {
             try {
+                //Q&A 2023/2/26
+                // Q:这里为什么要分两步走？
+                // A:csdn有个解释，是说队列的批量取出是没有阻塞的，但是take有，所以可以通过这样的形式，来确保一旦不阻塞就一定有值
                 final UnRegisterBrokerRequestHeader request = unregistrationQueue.take();
                 Set<UnRegisterBrokerRequestHeader> unregistrationRequests = new HashSet<>();
                 unregistrationQueue.drainTo(unregistrationRequests);

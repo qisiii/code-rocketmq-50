@@ -101,12 +101,17 @@ public class NamesrvController {
     }
 
     public boolean initialize() {
+        //如果有指定一个kvConfig.json，则会初始化一些配置
         loadConfig();
+        //主要是初始化了netty的服务端和客户端，在每端初始化了一些线程池
         initiateNetworkComponents();
+        //为下面的两个processor初始化executor
         initiateThreadExecutors();
+        // 在这里注册了GET_ROUTEINFO_BY_TOPIC和默认
         registerProcessor();
         startScheduleService();
         initiateSslContext();
+        //注册了一个在doafterresponse的filterByZoneName的rpchook,看着像是专门过滤部分数据的
         initiateRpcHooks();
         return true;
     }
@@ -118,7 +123,7 @@ public class NamesrvController {
     private void startScheduleService() {
         this.scanExecutorService.scheduleAtFixedRate(NamesrvController.this.routeInfoManager::scanNotActiveBroker,
             5, this.namesrvConfig.getScanNotActiveBrokerInterval(), TimeUnit.MILLISECONDS);
-
+        //打印配置日志
         this.scheduledExecutorService.scheduleAtFixedRate(NamesrvController.this.kvConfigManager::printAllPeriodically,
             1, 10, TimeUnit.MINUTES);
 
@@ -155,6 +160,7 @@ public class NamesrvController {
     }
 
     private void initiateSslContext() {
+        //暂时不关注
         if (TlsSystemConfig.tlsMode == TlsMode.DISABLED) {
             return;
         }
@@ -218,6 +224,7 @@ public class NamesrvController {
 
             this.remotingServer.registerDefaultProcessor(new ClusterTestRequestProcessor(this, namesrvConfig.getProductEnvName()), this.defaultExecutor);
         } else {
+            // qisi 2023/2/26 这里竟然需要单独注入两次，为什么？临时支持GET_ROUTEINFO_BY_TOPIC，但是需要default兜底
             // Support get route info only temporarily
             ClientRequestProcessor clientRequestProcessor = new ClientRequestProcessor(this);
             this.remotingServer.registerProcessor(RequestCode.GET_ROUTEINFO_BY_TOPIC, clientRequestProcessor, this.clientRequestExecutor);
@@ -240,6 +247,9 @@ public class NamesrvController {
 
         this.remotingClient.updateNameServerAddressList(Collections.singletonList(NetworkUtil.getLocalAddress()
             + ":" + nettyServerConfig.getListenPort()));
+        //Q&A 2023/4/16
+        // Q: remoteClient是干什么用的呢？
+        // A:首先，NOTIFY_MIN_BROKER_ID_CHANGE是namesrv要通知别的broker;唯一长时间持有的namesrv服务端是自己
         this.remotingClient.start();
 
         if (this.fileWatchService != null) {

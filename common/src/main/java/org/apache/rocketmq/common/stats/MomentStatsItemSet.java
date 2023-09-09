@@ -26,6 +26,9 @@ import java.util.concurrent.TimeUnit;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 
+/**
+ * 5分钟打印一次信息
+ */
 public class MomentStatsItemSet {
     private final ConcurrentMap<String/* key */, MomentStatsItem> statsItemTable =
         new ConcurrentHashMap<>(128);

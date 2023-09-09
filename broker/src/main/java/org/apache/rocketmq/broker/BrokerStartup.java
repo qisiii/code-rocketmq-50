@@ -78,7 +78,10 @@ public class BrokerStartup {
             controller.shutdown();
         }
     }
-
+    //前面都在初始化配置，直到最后几行new controller
+    //Q&A 2023/5/25
+    // Q:搞不懂的属性accessMessageInMemoryMaxRatio、enableDLegerCommitLog
+    // A:
     public static BrokerController buildBrokerController(String[] args) throws Exception {
         System.setProperty(RemotingCommand.REMOTING_VERSION_KEY, Integer.toString(MQVersion.CURRENT_VERSION));
 
@@ -106,13 +109,17 @@ public class BrokerStartup {
         }
 
         if (properties != null) {
+            //将配置文件中rmqAddressServerDomain和rmqAddressServerSubGroup写到系统变量
             properties2SystemEnv(properties);
+            //将配置文件转为brokerConfig
+            //TODO 从这里的行为来看，如果我外部传了listenPort，那么会覆盖下面所有配置的listenPort？
+            // netty只有服务端listenPort才有意义，其他的没有意义
             MixAll.properties2Object(properties, brokerConfig);
             MixAll.properties2Object(properties, nettyServerConfig);
             MixAll.properties2Object(properties, nettyClientConfig);
             MixAll.properties2Object(properties, messageStoreConfig);
         }
-
+        //将命令行的内容写入brokerConfig
         MixAll.properties2Object(ServerUtil.commandLine2Properties(commandLine), brokerConfig);
         if (null == brokerConfig.getRocketmqHome()) {
             System.out.printf("Please set the %s variable in your environment " +
@@ -134,7 +141,9 @@ public class BrokerStartup {
                 System.exit(-3);
             }
         }
-
+        //Q&A 2023/4/17
+        // Q:从节点，这个ratio是干什么用的呢？
+        // A:
         if (BrokerRole.SLAVE == messageStoreConfig.getBrokerRole()) {
             int ratio = messageStoreConfig.getAccessMessageInMemoryMaxRatio() - 10;
             messageStoreConfig.setAccessMessageInMemoryMaxRatio(ratio);
@@ -157,10 +166,13 @@ public class BrokerStartup {
                     break;
             }
         }
-
+        //Q&A 2023/4/17
+        // Q:这是什么？
+        // A:
         if (messageStoreConfig.isEnableDLegerCommitLog()) {
             brokerConfig.setBrokerId(-1);
         }
+        //ha是主从同步
         messageStoreConfig.setHaListenPort(nettyServerConfig.getListenPort() + 1);
         brokerConfig.setInBrokerContainer(false);
 

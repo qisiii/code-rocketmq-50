@@ -17,12 +17,20 @@
 package org.apache.rocketmq.common.constant;
 
 public class PermName {
+    //Q&A 2023/4/16
+    // Q:这里的INDEX_PERM_PRIORITY和INDEX_PERM_INHERIT是干什么的
+    // A:
     public static final int INDEX_PERM_PRIORITY = 3;
     public static final int INDEX_PERM_READ = 2;
     public static final int INDEX_PERM_WRITE = 1;
     public static final int INDEX_PERM_INHERIT = 0;
 
-
+    /**
+     * 
+     * @return 其实就是 1111，优先级不知道，后面对应111-RWX，读写继承？
+     * @author qisi
+     * @date  2023/4/16 16:18
+     * */
     public static final int PERM_PRIORITY = 0x1 << INDEX_PERM_PRIORITY;
     public static final int PERM_READ = 0x1 << INDEX_PERM_READ;
     public static final int PERM_WRITE = 0x1 << INDEX_PERM_WRITE;
