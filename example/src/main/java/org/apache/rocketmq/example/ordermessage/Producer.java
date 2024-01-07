@@ -32,15 +32,18 @@ import org.apache.rocketmq.remoting.exception.RemotingException;
 public class Producer {
     public static void main(String[] args) throws UnsupportedEncodingException {
         try {
-            MQProducer producer = new DefaultMQProducer("please_rename_unique_group_name");
+            DefaultMQProducer producer = new DefaultMQProducer("order_group_producer");
+            producer.setNamesrvAddr("http://localhost:9876");
+
             producer.start();
 
             String[] tags = new String[] {"TagA", "TagB", "TagC", "TagD", "TagE"};
             for (int i = 0; i < 100; i++) {
                 int orderId = i % 10;
                 Message msg =
-                    new Message("TopicTestjjj", tags[i % tags.length], "KEY" + i,
+                    new Message("OrderTopic", tags[i % tags.length], "KEY" + i,
                         ("Hello RocketMQ " + i).getBytes(RemotingHelper.DEFAULT_CHARSET));
+                //producer想要顺序的话，必须指定selector
                 SendResult sendResult = producer.send(msg, new MessageQueueSelector() {
                     @Override
                     public MessageQueue select(List<MessageQueue> mqs, Message msg, Object arg) {
@@ -53,7 +56,7 @@ public class Producer {
                 System.out.printf("%s%n", sendResult);
             }
 
-            producer.shutdown();
+//            producer.shutdown();
         } catch (MQClientException | RemotingException | MQBrokerException | InterruptedException e) {
             e.printStackTrace();
         }

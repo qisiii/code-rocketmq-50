@@ -325,6 +325,7 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
         }
 
         if (commitOffset >= 0 && !consumeRequest.getProcessQueue().isDropped()) {
+            //更新位点
             this.defaultMQPushConsumerImpl.getOffsetStore().updateOffset(consumeRequest.getMessageQueue(), commitOffset, false);
         }
 
@@ -418,6 +419,7 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
             }
 
             final Object objLock = messageQueueLock.fetchLockObject(this.messageQueue);
+            //线程池内加锁来处理同步消息
             synchronized (objLock) {
                 if (MessageModel.BROADCASTING.equals(ConsumeMessageOrderlyService.this.defaultMQPushConsumerImpl.messageModel())
                     || (this.processQueue.isLocked() && !this.processQueue.isLockExpired())) {

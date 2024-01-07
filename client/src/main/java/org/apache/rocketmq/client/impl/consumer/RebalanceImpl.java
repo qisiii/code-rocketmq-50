@@ -138,10 +138,12 @@ public abstract class RebalanceImpl {
         if (findBrokerResult != null) {
             LockBatchRequestBody requestBody = new LockBatchRequestBody();
             requestBody.setConsumerGroup(this.consumerGroup);
+            //将消费者id也上报上去，消费者锁队列
             requestBody.setClientId(this.mQClientFactory.getClientId());
             requestBody.getMqSet().add(mq);
 
             try {
+                //去broker锁
                 Set<MessageQueue> lockedMq =
                     this.mQClientFactory.getMQClientAPIImpl().lockBatchMQ(findBrokerResult.getBrokerAddr(), requestBody, 1000);
                 for (MessageQueue mmqq : lockedMq) {
@@ -369,6 +371,7 @@ public abstract class RebalanceImpl {
         List<PullRequest> pullRequestList = new ArrayList<PullRequest>();
         for (MessageQueue mq : mqSet) {
             if (!this.processQueueTable.containsKey(mq)) {
+                //在这里进行加锁
                 if (isOrder && !this.lock(mq)) {
                     log.warn("doRebalance, {}, add a new mq failed, {}, because lock failed", consumerGroup, mq);
                     continue;

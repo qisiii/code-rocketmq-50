@@ -25,12 +25,14 @@ import org.apache.rocketmq.remoting.common.RemotingHelper;
 public class Producer {
     public static void main(String[] args) throws MQClientException, InterruptedException {
 
-        DefaultMQProducer producer = new DefaultMQProducer("ProducerGroupName");
+        DefaultMQProducer producer = new DefaultMQProducer("simple_producer");
+        producer.setNamesrvAddr("http://localhost:9876");
         producer.start();
 
-        for (int i = 0; i < 128; i++)
+        for (int i = 0; i < 1; i++)
             try {
                 {
+                    //producer创建的时候会随机挑选一个队列放入消息
                     Message msg = new Message("TopicTest",
                         "TagA",
                         "OrderID188",
@@ -43,6 +45,6 @@ public class Producer {
                 e.printStackTrace();
             }
 
-        producer.shutdown();
+//        producer.shutdown();
     }
 }

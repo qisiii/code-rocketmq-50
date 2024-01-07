@@ -58,6 +58,7 @@ public class PullMessageService extends ServiceThread {
 
     public void executePullRequestImmediately(final PullRequest pullRequest) {
         try {
+            //最开始的由rebalance放入pullRequest
             this.pullRequestQueue.put(pullRequest);
         } catch (InterruptedException e) {
             log.error("executePullRequestImmediately pullRequestQueue.put", e);
@@ -92,6 +93,7 @@ public class PullMessageService extends ServiceThread {
 
         while (!this.isStopped()) {
             try {
+                //push模式会有地方塞入pullRequest到pullRequestQueue，然后去执行pullRequest请求，在callback中会有方法再塞入保证循环动起来
                 PullRequest pullRequest = this.pullRequestQueue.take();
                 this.pullMessage(pullRequest);
             } catch (InterruptedException ignored) {
