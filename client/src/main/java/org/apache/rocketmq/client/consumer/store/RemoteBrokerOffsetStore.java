@@ -198,6 +198,7 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
     /**
      * Update the Consumer Offset synchronously, once the Master is off, updated to Slave,
      * here need to be optimized.
+     * 更新offset到broker中去
      */
     @Override
     public void updateConsumeOffsetToBroker(MessageQueue mq, long offset, boolean isOneway) throws RemotingException,

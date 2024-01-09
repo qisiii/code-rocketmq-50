@@ -39,6 +39,7 @@ public interface OffsetStore {
 
     /**
      * Get offset from local storage
+     * 从持久化中读取
      *
      * @return The fetched offset
      */
@@ -46,6 +47,7 @@ public interface OffsetStore {
 
     /**
      * Persist all offsets,may be in local storage or remote name server
+     * 持久化offset
      */
     void persistAll(final Set<MessageQueue> mqs);
 

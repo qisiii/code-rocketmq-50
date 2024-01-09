@@ -399,7 +399,7 @@ public abstract class RebalanceImpl {
                 }
             }
         }
-
+        //consumer关键节点--万物起源
         this.dispatchPullRequest(pullRequestList);
 
         return changed;
