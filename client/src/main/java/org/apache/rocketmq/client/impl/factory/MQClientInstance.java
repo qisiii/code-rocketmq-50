@@ -101,6 +101,7 @@ public class MQClientInstance {
     private final ConcurrentMap<String/* Topic */, TopicRouteData> topicRouteTable = new ConcurrentHashMap<String, TopicRouteData>();
     private final Lock lockNamesrv = new ReentrantLock();
     private final Lock lockHeartbeat = new ReentrantLock();
+    //这个信息都是在添加路由信息的时候顺带添加的
     private final ConcurrentMap<String/* Broker Name */, HashMap<Long/* brokerId */, String/* address */>> brokerAddrTable =
         new ConcurrentHashMap<String, HashMap<Long, String>>();
     private final ConcurrentMap<String/* Broker Name */, HashMap<String/* address */, Integer>> brokerVersionTable =
@@ -278,6 +279,7 @@ public class MQClientInstance {
             @Override
             public void run() {
                 try {
+                    //定时刷新topic的路由信息
                     MQClientInstance.this.updateTopicRouteInfoFromNameServer();
                 } catch (Exception e) {
                     log.error("ScheduledTask updateTopicRouteInfoFromNameServer exception", e);
@@ -329,7 +331,7 @@ public class MQClientInstance {
 
     public void updateTopicRouteInfoFromNameServer() {
         Set<String> topicList = new HashSet<String>();
-
+        //刷新consumer存储的路由信息
         // Consumer
         {
             Iterator<Entry<String, MQConsumerInner>> it = this.consumerTable.entrySet().iterator();
@@ -346,7 +348,7 @@ public class MQClientInstance {
                 }
             }
         }
-
+        //刷新producer存储的路由信息
         // Producer
         {
             Iterator<Entry<String, MQProducerInner>> it = this.producerTable.entrySet().iterator();
@@ -626,7 +628,7 @@ public class MQClientInstance {
                             }
                         }
                     } else {
-                        //第一次进来isDefault是false
+                        //isDefault是false表示是查询当前的topic
                         topicRouteData = this.mQClientAPIImpl.getTopicRouteInfoFromNameServer(topic, 1000 * 3);
                     }
                     if (topicRouteData != null) {
@@ -639,6 +641,7 @@ public class MQClientInstance {
                         }
 
                         if (changed) {
+                            //对于没有创建的topic，使用TBW的路由信息，因此会往刚才获取到TBW里的broker发送消息
                             TopicRouteData cloneTopicRouteData = topicRouteData.cloneTopicRouteData();
 
                             for (BrokerData bd : topicRouteData.getBrokerDatas()) {

@@ -75,7 +75,7 @@ public class TopicPublishInfo {
                 int pos = Math.abs(index++) % this.messageQueueList.size();
                 if (pos < 0)
                     pos = 0;
-                //假如上次是失败的话，那么再次重试的时候依然如此
+                //假如上次是失败的话，那么再次重试的时候依然如此,因为会更换broker
                 MessageQueue mq = this.messageQueueList.get(pos);
                 if (!mq.getBrokerName().equals(lastBrokerName)) {
                     return mq;

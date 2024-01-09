@@ -57,7 +57,7 @@ public abstract class NettyRemotingAbstract {
      * Remoting logger instance.
      */
     private static final InternalLogger log = InternalLoggerFactory.getLogger(RemotingHelper.ROCKETMQ_REMOTING);
-
+    //两个semaphore都是65536
     /**
      * Semaphore to limit maximum number of on-going one-way requests, which protects system memory footprint.
      */
@@ -135,6 +135,7 @@ public abstract class NettyRemotingAbstract {
     }
 
     /**
+     * broker处理消息的入口
      * Entry of incoming command processing.
      *
      * <p>
@@ -190,6 +191,7 @@ public abstract class NettyRemotingAbstract {
      * @param cmd request command.
      */
     public void processRequestCommand(final ChannelHandlerContext ctx, final RemotingCommand cmd) {
+        //会从processorTable获取处理器
         final Pair<NettyRequestProcessor, ExecutorService> matched = this.processorTable.get(cmd.getCode());
         final Pair<NettyRequestProcessor, ExecutorService> pair = null == matched ? this.defaultRequestProcessor : matched;
         final int opaque = cmd.getOpaque();
@@ -241,6 +243,7 @@ public abstract class NettyRemotingAbstract {
             }
 
             try {
+                //在这里会将获取到的process放入对应的线程池去执行
                 final RequestTask requestTask = new RequestTask(run, ctx.channel(), cmd);
                 pair.getObject2().submit(requestTask);
             } catch (RejectedExecutionException e) {
@@ -400,11 +403,13 @@ public abstract class NettyRemotingAbstract {
         final int opaque = request.getOpaque();
 
         try {
+            //感觉更像是异步框架下，如何实现同步机制
             final ResponseFuture responseFuture = new ResponseFuture(channel, opaque, timeoutMillis, null, null);
+
             this.responseTable.put(opaque, responseFuture);
             final SocketAddress addr = channel.remoteAddress();
             channel.writeAndFlush(request).addListener(new ChannelFutureListener() {
-                @Override
+                @Override//怀疑是因为这里是ChannelFuture，所以匿名内部类可以识别是ChannelFutureListener
                 public void operationComplete(ChannelFuture f) throws Exception {
                     if (f.isSuccess()) {
                         responseFuture.setSendRequestOK(true);
@@ -415,11 +420,14 @@ public abstract class NettyRemotingAbstract {
 
                     responseTable.remove(opaque);
                     responseFuture.setCause(f.cause());
+                    //这里面有个countDown的唤醒
                     responseFuture.putResponse(null);
                     log.warn("send a request command to channel <" + addr + "> failed.");
                 }
             });
-
+            //有没有可能这里是等同的
+//            ChannelFuture channelFuture = channel.writeAndFlush(request);
+//            channelFuture.get(timeoutMillis,TimeUnit.MILLISECONDS);
             RemotingCommand responseCommand = responseFuture.waitResponse(timeoutMillis);
             if (null == responseCommand) {
                 if (responseFuture.isSendRequestOK()) {
@@ -441,8 +449,12 @@ public abstract class NettyRemotingAbstract {
         throws InterruptedException, RemotingTooMuchRequestException, RemotingTimeoutException, RemotingSendRequestException {
         long beginStartTime = System.currentTimeMillis();
         final int opaque = request.getOpaque();
+        //限制并发
         boolean acquired = this.semaphoreAsync.tryAcquire(timeoutMillis, TimeUnit.MILLISECONDS);
         if (acquired) {
+            //Q&A 2024/1/9
+            // Q: 单个线程为什么要使用原子类？只有acquired为true才可能new SemaphoreReleaseOnlyOnce,初始值一定是false，当前线程也没有2次修改的情况
+            // A:
             final SemaphoreReleaseOnlyOnce once = new SemaphoreReleaseOnlyOnce(this.semaphoreAsync);
             long costTime = System.currentTimeMillis() - beginStartTime;
             if (timeoutMillis < costTime) {
@@ -520,6 +532,9 @@ public abstract class NettyRemotingAbstract {
     public void invokeOnewayImpl(final Channel channel, final RemotingCommand request, final long timeoutMillis)
         throws InterruptedException, RemotingTooMuchRequestException, RemotingTimeoutException, RemotingSendRequestException {
         request.markOnewayRPC();
+        //Q&A 2024/1/9
+        // Q: 为什么这里要有semaphore?
+        // A: 用来控制并发，在timeoutMillis看是否能获取一个令牌
         boolean acquired = this.semaphoreOneway.tryAcquire(timeoutMillis, TimeUnit.MILLISECONDS);
         if (acquired) {
             final SemaphoreReleaseOnlyOnce once = new SemaphoreReleaseOnlyOnce(this.semaphoreOneway);

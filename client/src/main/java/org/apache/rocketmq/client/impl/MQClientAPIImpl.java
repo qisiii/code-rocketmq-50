@@ -510,6 +510,7 @@ public class MQClientAPIImpl {
                         }
 
                         try {
+                            //最重要的callBack其实就是放在了channel的future中，等回调执行onsuccess
                             sendCallback.onSuccess(sendResult);
                         } catch (Throwable e) {
                         }
@@ -1320,12 +1321,12 @@ public class MQClientAPIImpl {
 
         return getTopicRouteInfoFromNameServer(topic, timeoutMillis, true);
     }
-
+    /**本质上是调用GET_ROUTEINTO_BY_TOPIC*/
     public TopicRouteData getTopicRouteInfoFromNameServer(final String topic, final long timeoutMillis,
         boolean allowTopicNotExist) throws MQClientException, InterruptedException, RemotingTimeoutException, RemotingSendRequestException, RemotingConnectException {
         GetRouteInfoRequestHeader requestHeader = new GetRouteInfoRequestHeader();
         requestHeader.setTopic(topic);
-        //获取路由信息
+        //往namesrv发了GET_ROUTEINTO_BY_TOPIC请求
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_ROUTEINTO_BY_TOPIC, requestHeader);
 
         RemotingCommand response = this.remotingClient.invokeSync(null, request, timeoutMillis);

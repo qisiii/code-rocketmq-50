@@ -20,6 +20,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SemaphoreReleaseOnlyOnce {
+    //
     private final AtomicBoolean released = new AtomicBoolean(false);
     private final Semaphore semaphore;
 
@@ -29,6 +30,7 @@ public class SemaphoreReleaseOnlyOnce {
 
     public void release() {
         if (this.semaphore != null) {
+            //我觉得这行意义不大，只能说是一个组合操作，没有原子类的意义
             if (this.released.compareAndSet(false, true)) {
                 this.semaphore.release();
             }

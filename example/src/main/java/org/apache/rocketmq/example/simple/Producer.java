@@ -33,7 +33,7 @@ public class Producer {
             try {
                 {
                     //producer创建的时候会随机挑选一个队列放入消息
-                    Message msg = new Message("TopicTest",
+                    Message msg = new Message("TopicTest3",
                         "TagA",
                         "OrderID188",
                         "Hello world".getBytes(RemotingHelper.DEFAULT_CHARSET));
@@ -45,6 +45,6 @@ public class Producer {
                 e.printStackTrace();
             }
 
-//        producer.shutdown();
+        producer.shutdown();
     }
 }

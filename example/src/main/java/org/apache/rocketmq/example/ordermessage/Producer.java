@@ -41,7 +41,7 @@ public class Producer {
             for (int i = 0; i < 100; i++) {
                 int orderId = i % 10;
                 Message msg =
-                    new Message("OrderTopic", tags[i % tags.length], "KEY" + i,
+                    new Message("TopicTest", tags[i % tags.length], "KEY" + i,
                         ("Hello RocketMQ " + i).getBytes(RemotingHelper.DEFAULT_CHARSET));
                 //producer想要顺序的话，必须指定selector
                 SendResult sendResult = producer.send(msg, new MessageQueueSelector() {
