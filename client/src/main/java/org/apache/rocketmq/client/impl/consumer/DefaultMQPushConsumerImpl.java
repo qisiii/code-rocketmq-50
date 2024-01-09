@@ -524,6 +524,9 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         } catch (Exception e) {
             log.error("sendMessageBack Exception, " + this.defaultMQPushConsumer.getConsumerGroup(), e);
             //失败则直接发送普通消息，只是topic直接是重试topic
+            //Q&A 2024/1/9
+            // Q: 这是死信队列吗？
+            // A:
             Message newMsg = new Message(MixAll.getRetryTopic(this.defaultMQPushConsumer.getConsumerGroup()), msg.getBody());
 
             String originMsgId = MessageAccessor.getOriginMessageId(msg);
@@ -614,7 +617,9 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                     this.defaultMQPushConsumer.setOffsetStore(this.offsetStore);
                 }
                 this.offsetStore.load();
-
+                //Q&A 2024/1/9
+                // Q: 正常业务中，是不是并发和顺序都得有?
+                // A: 理论上是的，但是emm前几家公司好像做的不太行啊
                 if (this.getMessageListenerInner() instanceof MessageListenerOrderly) {
                     this.consumeOrderly = true;
                     this.consumeMessageService =
