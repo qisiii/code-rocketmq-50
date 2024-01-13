@@ -187,7 +187,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
             || delayLevel < 0) {
             newTopic = MixAll.getDLQTopic(requestHeader.getGroup());
             queueIdInt = Math.abs(this.random.nextInt() % 99999999) % DLQ_NUMS_PER_GROUP;
-            //死信队列？
+            //死信队列
             topicConfig = this.brokerController.getTopicConfigManager().createTopicInSendMessageBackMethod(newTopic,
                 DLQ_NUMS_PER_GROUP,
                 PermName.PERM_WRITE, 0
@@ -198,6 +198,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
                 return response;
             }
         } else {
+            //直接从第三个级别开始啊
             if (0 == delayLevel) {
                 delayLevel = 3 + msgExt.getReconsumeTimes();
             }
@@ -218,6 +219,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         msgInner.setBornTimestamp(msgExt.getBornTimestamp());
         msgInner.setBornHost(msgExt.getBornHost());
         msgInner.setStoreHost(this.getStoreHost());
+        //消费次数++
         msgInner.setReconsumeTimes(msgExt.getReconsumeTimes() + 1);
 
         String originMsgId = MessageAccessor.getOriginMessageId(msgExt);
@@ -353,6 +355,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         PutMessageResult putMessageResult = null;
         Map<String, String> oriProps = MessageDecoder.string2messageProperties(requestHeader.getProperties());
         String traFlag = oriProps.get(MessageConst.PROPERTY_TRANSACTION_PREPARED);
+        //事务消息
         if (traFlag != null && Boolean.parseBoolean(traFlag)) {
             if (this.brokerController.getBrokerConfig().isRejectTransactionMessage()) {
                 response.setCode(ResponseCode.NO_PERMISSION);

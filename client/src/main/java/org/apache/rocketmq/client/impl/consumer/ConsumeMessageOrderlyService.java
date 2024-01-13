@@ -428,6 +428,7 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                 return;
             }
             //有序消息消费的关键点--锁的是这一个队列，不同队列还是可以并发执行的
+            //这个地方我有些不理解，在提交pullRequest的时候，好像只有一个线程吧？也就是一个线程应该是对应一个队列啊？
             final Object objLock = messageQueueLock.fetchLockObject(this.messageQueue);
             //线程池内加锁来处理同步消息
             synchronized (objLock) {
@@ -490,7 +491,7 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                             ConsumeReturnType returnType = ConsumeReturnType.SUCCESS;
                             boolean hasException = false;
                             try {
-                                //真正消费前还要再锁一次，这次锁的是队列的锁
+                                //真正消费前还要再锁一次，这次锁的是processQueue队列的锁
                                 this.processQueue.getLockConsume().lock();
                                 if (this.processQueue.isDropped()) {
                                     log.warn("consumeMessage, the message queue not be able to consume, because it's dropped. {}",

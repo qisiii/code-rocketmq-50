@@ -62,7 +62,9 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
             if (null == offsetOld) {
                 offsetOld = this.offsetTable.putIfAbsent(mq, new AtomicLong(offset));
             }
-
+            //Q&A 2024/1/13
+            // Q: 这里不理解,准确的说是不理解increaseOnly这个东西
+            // A:
             if (null != offsetOld) {
                 if (increaseOnly) {
                     MixAll.compareAndIncreaseOnly(offsetOld, offset);

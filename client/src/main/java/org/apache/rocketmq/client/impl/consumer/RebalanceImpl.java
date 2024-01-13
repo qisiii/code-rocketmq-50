@@ -137,6 +137,7 @@ public abstract class RebalanceImpl {
         FindBrokerResult findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(mq.getBrokerName(), MixAll.MASTER_ID, true);
         if (findBrokerResult != null) {
             LockBatchRequestBody requestBody = new LockBatchRequestBody();
+            //某个消费者组，哪个消费者，锁了那些mq队列
             requestBody.setConsumerGroup(this.consumerGroup);
             //将消费者id也上报上去，消费者锁队列
             requestBody.setClientId(this.mQClientFactory.getClientId());

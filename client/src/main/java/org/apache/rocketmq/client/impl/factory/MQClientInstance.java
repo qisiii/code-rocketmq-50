@@ -671,6 +671,7 @@ public class MQClientInstance {
                                     Entry<String, MQConsumerInner> entry = it.next();
                                     MQConsumerInner impl = entry.getValue();
                                     if (impl != null) {
+                                        //根据订阅关系更新topic和队列的映射，因为最终是从队列拉取的
                                         impl.updateTopicSubscribeInfo(topic, subscribeInfo);
                                     }
                                 }

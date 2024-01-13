@@ -596,6 +596,7 @@ public class BrokerController {
 
         /**
          * Default
+         * 默认的处理器
          */
         AdminBrokerProcessor adminProcessor = new AdminBrokerProcessor(this);
         this.remotingServer.registerDefaultProcessor(adminProcessor, this.adminBrokerExecutor);

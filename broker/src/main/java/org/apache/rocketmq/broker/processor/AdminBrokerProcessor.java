@@ -164,6 +164,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
                 return this.getEarliestMsgStoretime(ctx, request);
             case RequestCode.GET_BROKER_RUNTIME_INFO:
                 return this.getBrokerRuntimeInfo(ctx, request);
+                //锁队列
             case RequestCode.LOCK_BATCH_MQ:
                 return this.lockBatchMQ(ctx, request);
             case RequestCode.UNLOCK_BATCH_MQ:
@@ -600,7 +601,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         RemotingCommand request) throws RemotingCommandException {
         final RemotingCommand response = RemotingCommand.createResponseCommand(null);
         LockBatchRequestBody requestBody = LockBatchRequestBody.decode(request.getBody(), LockBatchRequestBody.class);
-
+        //等于是锁在了mqLockTable中
         Set<MessageQueue> lockOKMQSet = this.brokerController.getRebalanceLockManager().tryLockBatch(
             requestBody.getConsumerGroup(),
             requestBody.getMqSet(),
