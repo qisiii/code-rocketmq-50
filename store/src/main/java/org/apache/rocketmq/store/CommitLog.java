@@ -332,6 +332,7 @@ public class CommitLog {
                         }
 
                         if (delayLevel > 0) {
+                            //对于有delayLevel，要再tagsCode里面记录发送时间
                             tagsCode = this.defaultMessageStore.getScheduleMessageService().computeDeliverTimestamp(delayLevel,
                                 storeTimestamp);
                         }
