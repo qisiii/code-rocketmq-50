@@ -323,7 +323,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                         log.error("Broker call checkTransactionState, but checkLocalTransactionState exception", e);
                         exception = e;
                     }
-
+                    //这里会再根据结果发送结束事务的消息
                     this.processTransactionState(
                         localTransactionState,
                         group,

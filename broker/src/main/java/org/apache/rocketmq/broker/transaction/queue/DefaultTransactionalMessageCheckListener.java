@@ -42,6 +42,7 @@ public class DefaultTransactionalMessageCheckListener extends AbstractTransactio
         log.error("MsgExt:{} has been checked too many times, so discard it by moving it to system topic TRANS_CHECK_MAXTIME_TOPIC", msgExt);
 
         try {
+            //放入TRANS_CHECK_MAX_TIME_TOPIC这个topic的队列
             MessageExtBrokerInner brokerInner = toMessageExtBrokerInner(msgExt);
             PutMessageResult putMessageResult = this.getBrokerController().getMessageStore().putMessage(brokerInner);
             if (putMessageResult != null && putMessageResult.getPutMessageStatus() == PutMessageStatus.PUT_OK) {
